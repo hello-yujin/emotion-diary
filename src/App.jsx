@@ -1,14 +1,14 @@
-import "./App.css"
-import { useReducer, useRef, createContext, useEffect, useState } from "react"
+import "./App.css";
+import { useReducer, useRef, createContext, useEffect, useState } from "react";
 // 이벤트 핸들러 함수 안에서 특정 조건에 따라 페이지를 이동 : useNavigate라는 커스텀 훅 사용
 import { Routes, Route, Link, useNavigate } from "react-router-dom";
-import Home from "./pages/Home"
-import Diary from "./pages/Diary"
-import New from "./pages/New"
-import Edit from "./pages/Edit"
-import Notfound from "./pages/Notfound"
-import Button from "./components/Button"
-import Header from './components/Header'
+import Home from "./pages/Home";
+import Diary from "./pages/Diary";
+import New from "./pages/New";
+import Edit from "./pages/Edit";
+import Notfound from "./pages/Notfound";
+import Button from "./components/Button";
+import Header from "./components/Header";
 
 import { getEmotionImage } from "./util/get-emotion-image";
 
@@ -46,28 +46,32 @@ import { getEmotionImage } from "./util/get-emotion-image";
 function reducer(state, action) {
   let nextState;
 
-  switch(action.type) {
+  switch (action.type) {
     // nextState에 값을 보관하는 이유가 로컬 스토리지에 변경된 데이터를 보관해주기 위함이었는데
     // init case는 action.data의 값이 애초에 로컬 스토리지로부터 방금 불러온 값
     // 굳이 로컬스토리지에 한 번 더 보관할 필요 없음
-    case "INIT" : 
-    return action.data;
+    case "INIT":
+      return action.data;
+
     case "CREATE": {
       nextState = [action.data, ...state];
       break;
     }
     case "UPDATE": {
-      nextState = state.map(item => String(item.id) === String(action.data.id)? action.data : item);
+      nextState = state.map((item) =>
+        String(item.id) === String(action.data.id) ? action.data : item
+      );
       break;
     }
     case "DELETE": {
-      nextState = state.filter(item => String(item.id)!== String(action.id));
+      nextState = state.filter((item) => String(item.id) !== String(action.id));
       break;
     }
-    default: return state;
+    default:
+      return state;
   }
 
-  localStorage.setItem("diary", JSON.stringify(nextState))
+  localStorage.setItem("diary", JSON.stringify(nextState));
   return nextState;
 }
 
@@ -78,7 +82,7 @@ export const DiaryDispatchContext = createContext();
 function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, dispatch] = useReducer(reducer, []);
-  const idRef = useRef(0)
+  const idRef = useRef(0);
 
   // localStorage로 data state를 보관하면 우리가 직접 삭제하기 전까지는 영구적 변환하기 때문에
   // 주석처리 하고 브라우저에서 새로고침해도 데이터가 사라지지 않음
@@ -93,23 +97,25 @@ function App() {
   // localStorage.removeItem("test")
 
   useEffect(() => {
-    const storedData = localStorage.getItem("diary")
-    if(!storedData.length) {
+    const storedData = localStorage.getItem("diary");
+    if (!storedData) {
+      setIsLoading(false);
       return;
     }
 
-    const parsedData = JSON.parse(storedData)
-    if(!Array.isArray(parsedData)) {
+    const parsedData = JSON.parse(storedData);
+
+    if (!Array.isArray(parsedData)) {
       setIsLoading(false);
       return;
     }
 
     let maxId = 0;
     parsedData.forEach((item) => {
-      if(Number(item.id) > maxId) {
+      if (Number(item.id) > maxId) {
         maxId = Number(item.id);
       }
-    })
+    });
 
     idRef.current = maxId + 1;
     // console.log(maxId)
@@ -117,55 +123,53 @@ function App() {
     dispatch({
       type: "INIT",
       data: parsedData,
-    })
+    });
     setIsLoading(false);
-  }, [])
+  }, []);
 
   // 새로운 일기 추가
-  const onCreate = (createdData, emotionId, content) => {
+  const onCreate = (createdDate, emotionId, content) => {
     dispatch({
       type: "CREATE",
       data: {
-        id : idRef.current++,
-        createdData,
+        id: idRef.current++,
+        createdDate,
         emotionId,
-        content
-      }
-    })
-  }
+        content,
+      },
+    });
+  };
 
   // 기존 일기 수정
-  const onUpdate = (id, createdData, emotionId, content) => {
+  const onUpdate = (id, createdDate, emotionId, content) => {
     dispatch({
       type: "UPDATE",
       data: {
         id,
-        createdData,
+        createdDate,
         emotionId,
-        content
-      }
-    })
-  }
+        content,
+      },
+    });
+  };
 
   // 기존 일기 삭제
   const onDelete = (id) => {
     dispatch({
       type: "DELETE",
-        id,
-    })
-  }
+      id,
+    });
+  };
 
-
-    // <div className="App">
-    //   <Routes>
-    //     <Route path="/" element={<Home data={data} onDelete={onDelete}/>}/>
-    //     <Route path="/new" element={<New onCreate={onCreate}/>}/>
-    //     <Route path="/diary/:id" element={<Diary data={data} onUpdate={onUpdate}/>}/>
-    //     <Route path="/edit/:id" element={<Edit data={data} onUpdate={onUpdate}/>}/>
-    //     <Route path="*" element={<Notfound/>}/>
-    //   </Routes>
-    // </div>
-
+  // <div className="App">
+  //   <Routes>
+  //     <Route path="/" element={<Home data={data} onDelete={onDelete}/>}/>
+  //     <Route path="/new" element={<New onCreate={onCreate}/>}/>
+  //     <Route path="/diary/:id" element={<Diary data={data} onUpdate={onUpdate}/>}/>
+  //     <Route path="/edit/:id" element={<Edit data={data} onUpdate={onUpdate}/>}/>
+  //     <Route path="*" element={<Notfound/>}/>
+  //   </Routes>
+  // </div>
 
   // useNavigate를 호출했을 때 반환되는 네비게이팅 함수를 nav라는 변수에 저장
   // const nav = useNavigate();
@@ -174,8 +178,8 @@ function App() {
   //   nav('/new')
   // }
 
-  if(isLoading) {
-    return <div>데이터 로딩중입니다 ...</div>
+  if (isLoading) {
+    return <div>데이터 로딩중입니다 ...</div>;
   }
 
   return (
@@ -233,20 +237,19 @@ function App() {
       <button onClick={()=>{
         onDelete(1);
       }}></button> */}
-<DiaryStateContext.Provider value={data}>
-      <DiaryDispatchContext.Provider value={{onCreate, onUpdate, onDelete}}>
-      <Routes>
-      <Route path="/" element={<Home />}/>
-      <Route path="/new" element={<New />}/>
-      <Route path="/diary/:id" element={<Diary />}/>
-      <Route path="/edit/:id" element={<Edit
-       />}/>
-      <Route path="*" element={<Notfound />}/>
-      </Routes>
-      </DiaryDispatchContext.Provider>
-</DiaryStateContext.Provider>
+      <DiaryStateContext.Provider value={data}>
+        <DiaryDispatchContext.Provider value={{ onCreate, onUpdate, onDelete }}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/new" element={<New />} />
+            <Route path="/diary/:id" element={<Diary />} />
+            <Route path="/edit/:id" element={<Edit />} />
+            <Route path="*" element={<Notfound />} />
+          </Routes>
+        </DiaryDispatchContext.Provider>
+      </DiaryStateContext.Provider>
     </>
-)
+  );
 }
 
 export default App;
